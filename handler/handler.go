@@ -4,18 +4,49 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/verissimo-sn/available-positions/config"
+	"github.com/verissimo-sn/available-positions/schemas"
+	"gorm.io/gorm"
 )
 
-type PositionHandler struct{}
+type PositionHandler struct {
+	logger        *config.Logger
+	db            *gorm.DB
+	httpFormatter *HttpFormatter
+}
 
 func NewPositionHandler() *PositionHandler {
-	return &PositionHandler{}
+	return &PositionHandler{
+		logger:        config.GetLogger("position handler"),
+		db:            config.GetSQLite(),
+		httpFormatter: NewHttpFormatter(),
+	}
 }
 
 func (h *PositionHandler) Create(ctx *gin.Context) {
-	ctx.JSON(http.StatusCreated, gin.H{
-		"msg": "success POST available positions",
-	})
+	request := CretePositionDto{}
+	ctx.BindJSON(&request)
+	if err := request.Validate(); err != nil {
+		h.logger.Errorf("Validation error: %v", err)
+		h.httpFormatter.Response(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	ap := schemas.AvailablePosition{
+		Role:     request.Role,
+		Tech:     request.Tech,
+		Level:    request.Level,
+		Company:  request.Company,
+		Location: request.Location,
+		Salary:   request.Salary,
+		Link:     request.Link,
+	}
+
+	if err := h.db.Create(&ap).Error; err != nil {
+		h.logger.Errorf("Error on create position: %v", err)
+		h.httpFormatter.Response(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	h.httpFormatter.Response(ctx, http.StatusCreated, nil)
 }
 
 func (h *PositionHandler) Update(ctx *gin.Context) {

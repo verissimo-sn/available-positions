@@ -23,3 +23,6 @@ go.sum
 
 # Go workspace file
 go.work
+
+# local database file
+/db

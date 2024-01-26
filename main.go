@@ -10,7 +10,7 @@ var (
 )
 
 func main() {
-	logger = config.GetLogger("Available Positions")
+	logger = config.GetLogger("app")
 	configError := config.Init()
 	if configError != nil {
 		logger.Errorf("Error initializing config: %v", configError)
